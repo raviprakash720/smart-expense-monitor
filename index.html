@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Monitor</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <header class="header glass">
+        <div class="logo-container">
+            <div class="logo-circle">SEM</div>
+            <span class="app-name">Smart Expense Monitor</span>
+        </div>
+        <div class="profile-area" id="profileArea">
+            <div class="profile-avatar" id="avatarBtn">👤</div>
+            <div class="profile-dropdown" id="profileDropdown">
+                <div class="dropdown-header">User Account</div>
+                <div class="dropdown-item">Email: <span id="userEmail">Loading...</span></div>
+                <div class="dropdown-item">UID: <span id="userId">Loading...</span></div>
+                <button id="logoutBtn" class="btn btn-danger" style="width: 100%; margin-top: 0.5rem;">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Auth Sections -->
+        <section id="loginSection" class="auth-section">
+            <div class="card" style="max-width: 400px; margin: 2rem auto;">
+                <h2 style="text-align: center; margin-bottom: 1.5rem;">Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="loginEmail" placeholder="name@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                </form>
+                <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #6b7280;">
+                    Don't have an account? <a href="#" id="showSignup" style="color: #2563eb; font-weight: 600; text-decoration: none;">Sign Up</a>
+                </p>
+            </div>
+        </section>
+
+        <section id="signupSection" class="auth-section hidden">
+            <div class="card" style="max-width: 400px; margin: 2rem auto;">
+                <h2 style="text-align: center; margin-bottom: 1.5rem;">Create Account</h2>
+                <form id="signupForm">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="signupEmail" placeholder="name@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="signupPassword" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
+                </form>
+                <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #6b7280;">
+                    Already have an account? <a href="#" id="showLogin" style="color: #2563eb; font-weight: 600; text-decoration: none;">Login</a>
+                </p>
+            </div>
+        </section>
+
+        <!-- App Sections -->
+        
+        <!-- DASHBOARD UI -->
+        <section id="dashboardSection" class="app-section">
+            <div class="card hero-card">
+                <h2>Total Spent This Month</h2>
+                <p id="totalSpent" class="total-amount">₹0</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="card stat-card">
+                    <h3>Food</h3>
+                    <p id="foodTotal">₹0</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Travel</h3>
+                    <p id="travelTotal">₹0</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Utilities</h3>
+                    <p id="utilitiesTotal">₹0</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Others</h3>
+                    <p id="othersTotal">₹0</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 1.5rem;">Expense Distribution</h2>
+                <canvas id="expenseChart" width="400" height="200"></canvas>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>AI Insights</h2>
+                    <button id="aiInsightsBtn" class="btn btn-secondary btn-pill">Get AI Insights</button>
+                </div>
+                <div id="aiInsights" class="insights-styled-box">
+                    <p style="color: #6b7280;">Click the button above to analyze your spending habits.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADD EXPENSE PAGE UI -->
+        <section id="addExpenseSection" class="app-section">
+            <div class="card" style="max-width: 700px; margin: 0 auto 2rem auto;">
+                <h2 style="margin-bottom: 1.5rem;">Add New Expense</h2>
+                <form id="expenseForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="amount" placeholder="0.00" min="0.01" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="description" placeholder="Lunch, Coffee, etc." required>
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="category" required>
+                                <option value="Food">Food</option>
+                                <option value="Travel">Travel</option>
+                                <option value="Utilities">Utilities</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Add Expense</button>
+                </form>
+            </div>
+
+            <div id="expensesList">
+                <!-- Expenses will be loaded here dynamically as horizontal cards -->
+            </div>
+        </section>
+
+        <!-- UPLOAD BILL UI -->
+        <section id="uploadBillSection" class="app-section">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <h2 style="margin-bottom: 1.5rem;">Upload Bill</h2>
+                <div class="drop-zone" id="uploadArea">
+                    <span class="upload-icon">📤</span>
+                    <p style="font-weight: 600; margin-bottom: 0.5rem;">Drag & drop your bill image here</p>
+                    <p style="font-size: 0.85rem; color: #6b7280;">or Browse Files</p>
+                    <input type="file" id="billInput" accept="image/*" hidden>
+                </div>
+                <div id="imagePreview" class="image-preview hidden" style="margin-top: 2rem; text-align: center;">
+                    <div class="card" style="display: inline-block; padding: 1rem;">
+                        <img id="previewImage" src="" alt="Bill Preview" style="max-width: 100%; border-radius: 12px;">
+                    </div>
+                </div>
+                <p style="text-align: center; margin-top: 1.5rem; color: #6b7280; font-style: italic; font-size: 0.9rem;">
+                    AI bill reading coming soon.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav id="bottomNav" class="bottom-nav hidden" style="position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 0.75rem 0; z-index: 1000;">
+        <div class="nav-item active" data-section="dashboardSection" style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <span style="font-size: 1.5rem;">📊</span>
+            <span style="font-size: 0.7rem; font-weight: 600;">Dashboard</span>
+        </div>
+        <div class="nav-item" data-section="addExpenseSection" style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <span style="font-size: 1.5rem;">➕</span>
+            <span style="font-size: 0.7rem; font-weight: 600;">Add</span>
+        </div>
+        <div class="nav-item" data-section="uploadBillSection" style="display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <span style="font-size: 1.5rem;">📄</span>
+            <span style="font-size: 0.7rem; font-weight: 600;">Bills</span>
+        </div>
+    </nav>
+
+    <script src="script.js"></script>
+</body>
+</html>
